@@ -1,0 +1,91 @@
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+library(tidyverse)
+library(lubridate)
+library(readxl)
+library(ggalt)
+library(gridExtra)
+library(ggplot2)
+library(ggrepel)
+library(directlabels)
+
+theme_set(theme_light())
+```
+```{r}
+pepsi <- read_excel("D:\\R\\RBAC\\pepsico.xlsx")
+# Save template
+ggsave(".png", pie_chart2, width = 12, height = 9, device = "png", dpi = 300)
+```
+
+
+# Factor
+```{r}
+# COGS 
+factor(type, levels = c("Primary_Transportation", "Others", "Warehouse", "Variable_Manufacturing", "Fixed_Manufacturing", "Packaging", "Raw_Materials"))
+# Month
+factor(Month, levels=c('1','2','3','4', "5", "6", "7", "8", "9", "10", "11", "12"))
+# Product Type
+factor(Product_Type, levels=c("PMX", "RGB HF", 'CAN HF', "RGB CF", 
+                              'PET HF', 'CAN CF', "Water", "PET CF"))
+
+factor(Product_Type, levels=c('PET CF','PET HF','CAN CF','CAN HF', "Water", 
+                              "RGB CF", "RGB HF", "PMX"))
+# Sales Office
+factor(Sales_Office, levels=c("South", "North", "Central"))
+
+factor(metric, levels=c("GROSS_REVENUE", "NET_REVENUE", "COGS", "Total_Product_Cost", "NOPBT"))
+```
+# Color
+```{r}
+# 8 colors
+colors <- c("#595BD4","#FD3259", "167ffc", "#3cabdb", "#53D86A", 
+            "#FFCB2F", "#fe9526","#FD3d39")
+# 7 colors
+colors <- c("#FD3d39", "#fe9526", "#FFCB2F", "#53D86A", "#3cabdb", 
+            "167ffc", "#595BD4")
+# 2 colors
+colors <- c("#fe9526", "#FD3d39")
+
+# 1 colors
+colors <- c("#fe9526")
+
+# 2 colors
+colors <- c("#FD3d39","#fe9526")
+# 8 colors
+colors <- c("#EEEED1","#F5FCC2","#E0ED87","#CCDE57",
+              "#B3C732","#94A813","#718200","#6E8B3D")
+# 4 colors 
+colors <- c("#53D86A", "#3cabdb", 
+            "167ffc", "#595BD4")
+# 4 colors 
+colors <- c("#53D86A", 
+            "#FFCB2F", "#fe9526","#FD3d39")
+# 4 colors
+colors <- c("#FD3D39","#FE9526","#FFCB2F","#53D86A")
+```
+# Sample code
+```{r}
+# T test
+t.test()
+# Pivot longer
+pepsi_metric_test1 <- pepsi1 %>%
+  select(Month, Quarter, Product_Type, Sales_Office, Sales_Volume, Gross_Sales,
+         Raw_Materials:Trans_Delivery) %>%
+  pivot_longer(Raw_Materials:Trans_Delivery, names_to = "loss", values_to = "value")
+# Correlation
+correl1 <- correlations_test %>%
+  filter(item1 == "Gross_Sales" | item2 == "Gross_Sales") %>%
+  graph_from_data_frame() %>%
+  ggraph() +
+  geom_edge_link(aes(edge_alpha = correlation, width = correlation > 0.95), colour = "#FE9526") +
+  geom_node_point(size = 7) +
+  geom_node_text(aes(label = name), repel = TRUE, 
+                 hjust = 1, fontface="bold", vjust = 0.5) +
+  labs(title = "The correlation between each factor and gross sales of SP Co. in Y3") 
+  theme(plot.title = element_text(face = "bold", size = (18))) 
+```
+
+
+

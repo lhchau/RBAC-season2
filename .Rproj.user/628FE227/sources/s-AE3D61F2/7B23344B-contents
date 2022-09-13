@@ -1,0 +1,81 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+year1 %>%
+  mutate(type = fct_reorder(type, value)) %>%
+  ggplot(aes(type, value, fill = type)) +
+  geom_bar(stat = "identity") +
+  facet_grid(year ~ .) +
+  coord_flip() +
+  geom_text(aes(label = signif(value, digits = 3)), 
+            position = position_stack(vjust = 0.7), size = 3.3, fontface="bold")
+  labs(title = "") + 
+  theme(plot.title = element_text(face = "bold", size = 20),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+#        axis.title.y = element_blank(),
+#        axis.text.y = element_blank(),
+#        axis.ticks.y = element_blank(),
+        strip.background = element_rect(fill="#E0ED87"),
+        strip.text = element_text(colour = 'black'),
+        legend.position="right",
+        legend.title = element_blank(),
+        legend.text = element_text(face = "bold", size = 10)
+      ) +
+  scale_fill_manual(values = colors) 
+
+```
+# Bar 2
+```{r}
+rate_of_product<-pepsi %>%
+  group_by(Sales_Office, Product_Type) %>%
+  summarise(rate = sum(Sales_Volume)/Total_Volume) %>%
+  distinct() %>%
+  ungroup() %>%
+  mutate(Product_Type = fct_reorder(Product_Type, rate, .desc = FALSE)) %>%
+  ggplot(aes(Product_Type, rate, fill = Product_Type)) +
+  geom_bar(stat = "identity") +
+  facet_grid(. ~ factor(Sales_Office, levels=c("South", "North", "Central"))) +
+  labs(title = "") + 
+  theme(legend.position="bottom",
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x=element_blank(),
+        axis.title.y = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.background =element_rect(fill="#E0ED87"),
+        strip.text = element_text(colour = 'black')) +
+  scale_fill_manual(values = colors)
+```
+# Cot Doi
+```{r}
+cot_doi <- year1 %>%
+  mutate(type = fct_reorder(type, value)) %>%
+  ggplot(aes(x=type, y=value, fill = year)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Cost of each factor in COGS in Year 2 and Year 3",
+       subtitle = "Unit (USD $ thousands)") + 
+  theme(plot.title = element_text(face = "bold", size = 20),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+#        axis.title.y = element_blank(),
+#        axis.text.y = element_blank(),
+#        axis.ticks.y = element_blank(),
+        strip.background = element_rect(fill="#E0ED87"),
+        strip.text = element_text(colour = 'black'),
+        legend.position="right",
+        legend.title = element_blank(),
+        legend.text = element_text(face = "bold", size = 10)
+      ) +
+  scale_fill_manual(values = colors)
+```
+

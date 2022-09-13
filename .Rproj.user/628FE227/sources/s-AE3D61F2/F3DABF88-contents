@@ -1,0 +1,65 @@
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+sales_line_vn_final <- pepsi1 %>%
+  group_by(Month) %>%
+  summarise(total = sum(Gross_Sales)/1e9) %>%
+  ggplot(aes(factor(Month, levels=c("1","2","3","4", "5", "6", "7", 
+                                    "8", "9", "10", "11", "12")), total, group = 1)) +
+  geom_point(size = 2) +
+  geom_line(size = 1, col = "cyan4") +
+  geom_text(aes(label = signif(total, digits = 3)), 
+            size = 4, fontface="bold", vjust = -0.6, hjust = -0.05) +
+  geom_hline(yintercept = c(global_average, low_cof, hight_cof), 
+             linetype = 2, color = "grey35", size = 1) +
+  labs(title = "Monthly gross revenue of SP Co. in Year 3",
+       subtitle = "Unit: (VND billions)") +
+  theme(plot.title = element_text(face = "bold", size = 20),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+#        axis.title.y = element_blank(),
+#        axis.text.y = element_blank(),
+#        axis.ticks.y = element_blank(),
+        strip.background = element_rect(fill="#E0ED87"),
+        strip.text = element_text(colour = 'black'),
+        legend.position="right",
+        legend.title = element_blank(),
+        legend.text = element_text(face = "bold", size = 10)
+      ) 
+```
+# Assign line color name in tail line
+```{r}
+test5<- pepsi2 %>%
+  group_by(Product_Type, Month) %>%
+  summarise(sum = sum(Gross_Sales)/1e9) %>%
+  ggplot(aes(Month, sum, col = Product_Type, group = Product_Type)) +
+  geom_point(size = 2) +
+  geom_line(size = 1.2) +
+  scale_x_discrete(expand=c(0, 1)) +
+  geom_dl(aes(label = Product_Type), 
+          method = list(dl.combine("last.points")), cex = 1) +
+  labs(y = "Gross Sales (Billion)") +
+  theme(plot.title = element_text(face = "bold", size = 20),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+#        axis.title.y = element_blank(),
+#        axis.text.y = element_blank(),
+#        axis.ticks.y = element_blank(),
+        strip.background = element_rect(fill="#E0ED87"),
+        strip.text = element_text(colour = 'black'),
+        legend.position="right",
+        legend.title = element_blank(),
+        legend.text = element_text(face = "bold", size = 10)
+      ) +
+  scale_color_manual(values = c("PET CF" = "#FD3D39", "PET HF" = "#FE9526", 'CAN CF' = "#FFCB2F",
+                                "Water" = "#167FFC", "CAN HF" = "#53D86A"))
+
+
+```
+```
+

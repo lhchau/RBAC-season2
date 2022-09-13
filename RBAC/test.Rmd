@@ -1,0 +1,220 @@
+---
+title: "World Health Organisation: Global Suicide Trends & Analysis"
+author: "Chau dep trai"
+output: 
+  pdf_document:
+    toc: TRUE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# 1.1 Import & Tidy
+7 countries removed (<= 3 years of data total)
+2016 data was removed (few countries had any, those that did often had data missing)
+HDI was removed due to 2/3 missing data
+Generation variable has problems, detailed in 2.11
+Continent was added to the dataset using the countrycode package
+Africa has very few countries providing suicide data
+```{r}
+library(tidyverse) # general
+library(ggalt) # dumbbell plots
+library(countrycode) # continent
+library(rworldmap) # quick country-level heat maps
+library(gridExtra) # plots
+library(broom) # significant trends within countries
+
+theme_set(theme_light())
+```
+
+```{r}
+# 1) Import & data cleaning
+
+data_test <- read_csv("D:\\R\\RBAC\\RBAC\\master.csv")
+
+glimpse(data)
+
+# 2/3 missing value -> remove, not useable
+sum(is.na(data$`HDI for year`)) / length(data$`HDI for year`)
+
+# this variable is vague
+table(data$age, data$generation)
+
+data <- data %>%
+  select(-c(`HDI for year`, `suicides/100k pop`)) %>%
+  rename(gdp_for_year = `gdp_for_year ($)`,
+         gdp_for_capita = `gdp_per_capita ($)`,
+         country_year = `country-year`) %>%
+  as.data.frame()
+
+glimpse(data)
+```
+```{r}
+# 2) OTHER ISSUES
+
+# country_year has 12 rows for each country and year combination
+data %>%
+  group_by(country_year) %>%
+  count() %>%
+  filter(n != 12)
+
+# missing of 2016 data
+data <- data %>%
+  filter(year != 2016) %>%
+  select(-country_year)
+
+# b) excluding countries with <= 3 years of data:
+minimum_years <- data %>%
+  group_by(country) %>%
+  summarize(rows = n(), 
+            years = rows / 12) %>%
+  arrange(years)
+
+data <- data %>%
+  filter(!(country %in% head(minimum_years$country, 7)))
+
+# no other major data issues found yet
+```
+```{r}
+# 3) TIDYING DATAFRAME
+glimpse(data)
+
+data$age <- gsub(" years", "", data$age)
+data$sex <- ifelse(data$sex == "male", "Male", "Female")
+
+# getting continent data:
+data$continent <- countrycode(sourcevar = data[, "country"],
+                              origin = "country.name",
+                              destination = "continent")
+
+# Nominal factors
+data_nominal <- c('country', 'sex', 'continent')
+data[data_nominal] <- lapply(data[data_nominal], function(x){factor(x)})
+
+# Making age ordinal
+data$age <- factor(data$age, 
+                   ordered = T, 
+                   levels = c("5-14",
+                              "15-24", 
+                              "25-34", 
+                              "35-54", 
+                              "55-74", 
+                              "75+"))
+
+# Making generation ordinal
+data$generation <- factor(data$generation, 
+                   ordered = T, 
+                   levels = c("G.I. Generation", 
+                              "Silent",
+                              "Boomers", 
+                              "Generation X", 
+                              "Millenials", 
+                              "Generation Z"))
+data <- as_tibble(data)
+```
+```{r}
+# the global rate over the time period will be useful:
+
+global_average <- (sum(as.numeric(data$suicides_no)) / sum(as.numeric(data$population))) * 100000
+```
+#1.2 Key Insights
+Suicide rates are decreasing globally. (2.1)
+Of those countries that show clear linear trends over time, 2/3 are decreasing. (2.5.2)
+On average, suicide rate increases with age. (2.4)
+This remains true when controlling for continent in the Americas, Asia & Europe, but not for Africa & Oceania. (2.8)
+There is a weak positive relationship between a countries GDP (per capita) and suicide rate. (2.10)
+The highest suicide rate ever recorded in a demographic (for 1 year) is 225 (per 100k population). (2.12)
+There is an overrepresentation of men in suicide deaths at every level of analysis (globally, at a continent and country level). Globally, the male rate is ~3.5x higher. (2.3) (2.6) (2.7)
+```{r}
+# 2.1 Global Trend
+data %>%
+  group_by(year) %>%
+  summarize(population = sum(population), 
+            suicides = sum(suicides_no), 
+            suicides_per_100k = (suicides / population) * 100000) %>%
+  ggplot(aes(x = year, y = suicides_per_100k)) + 
+  geom_line(col = "deepskyblue3", size = 1) + 
+  geom_point(col = "deepskyblue3", size = 2) + 
+  geom_hline(yintercept = global_average, linetype = 2, color = "grey35", size = 1) +
+  labs(title = "Global Suicides (per 100k)",
+       subtitle = "Trend over time, 1985 - 2015.",
+       x = "Year", 
+       y = "Suicides per 100k") + 
+  scale_x_continuous(breaks = seq(1985, 2015, 2)) + 
+  scale_y_continuous(breaks = seq(10, 20))
+
+ggsave("2_1.png", width = 8, height = 6, device = "png", dpi = 300)
+
+#Insights
+
+#Peak suicide rate was 15.3 deaths per 100k in 1995
+#Decreased steadily, to 11.5 per 100k in 2015 (~25% decrease)
+#Rates are only now returning to their pre-90’s rates
+#Limited data in the 1980’s, so it’s hard to say if rate then was truly representative of the global population
+```
+
+```{r}
+# 2.2 By Continent
+
+continent <- data %>%
+  group_by(continent) %>%
+  summarize(suicide_per_100k = (sum(as.numeric(suicides_no)) / sum(as.numeric(population))) * 100000) %>%
+  arrange(suicide_per_100k)
+
+continent$continent <- factor(continent$continent, ordered = T, levels = continent$continent)
+
+continent_plot <- ggplot(continent, aes(x = continent, y = suicide_per_100k, fill = continent)) + 
+  geom_bar(stat = "identity") + 
+  labs(title = "Global Suicides (per 100k), by Continent",
+  x = "Continent", 
+  y = "Suicides per 100k", 
+  fill = "Continent") +
+  theme(legend.position = "none", title = element_text(size = 10)) + 
+  scale_y_continuous(breaks = seq(0, 20, 1), minor_breaks = F)
+
+
+continent_time <- data %>%
+  group_by(year, continent) %>%
+  summarize(suicide_per_100k = (sum(as.numeric(suicides_no)) / sum(as.numeric(population))) * 100000)
+
+continent_time$continent <- factor(continent_time$continent, ordered = T, levels = continent$continent)
+
+continent_time_plot <- ggplot(continent_time, aes(x = year, y = suicide_per_100k, col = factor(continent))) + 
+  facet_grid(continent ~ ., scales = "free_y") + 
+  geom_line() + 
+  geom_point() + 
+  labs(title = "Trends Over Time, by Continent", 
+       x = "Year", 
+       y = "Suicides per 100k", 
+       color = "Continent") + 
+  theme(legend.position = "none", title = element_text(size = 10)) + 
+  scale_x_continuous(breaks = seq(1985, 2015, 5), minor_breaks = F)
+
+g <- grid.arrange(continent_plot, continent_time_plot, ncol = 2)
+
+ggsave("2_2.png", g, width = 8, height = 6, device = "png", dpi = 300)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

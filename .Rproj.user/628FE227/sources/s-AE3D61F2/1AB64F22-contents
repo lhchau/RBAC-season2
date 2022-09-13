@@ -1,0 +1,37 @@
+#
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+pie_chart <- year1 %>%
+  filter(year == "Y3") %>%
+  mutate(rate = value/COGS) %>%
+  ggplot(aes("", rate, fill = factor(type, levels = c("Primary_Transportation", "Others", "Warehouse", "Variable_Manufacturing", "Fixed_Manufacturing", "Packaging", "Raw_Materials")))) +
+  geom_bar(stat = "identity") +
+  coord_polar("y", start = 0) +
+  geom_text(aes(label = paste0(round(rate*100), "%")),
+            position = position_stack(vjust = 0.5),
+            check_overlap = TRUE, size = 4.5, fontface="bold") +
+  labs(title = "Proportion of each factor in COGS Year 3") +
+  theme(plot.title = element_text(face = "bold", size = 20),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+#        axis.title.y = element_blank(),
+#        axis.text.y = element_blank(),
+#        axis.ticks.y = element_blank(),
+        strip.background = element_rect(fill="#E0ED87"),
+        strip.text = element_text(colour = 'black'),
+        legend.position="right",
+        legend.title = element_blank(),
+        legend.text = element_text(face = "bold", size = 10)
+      ) +
+  scale_fill_manual(values = colors) 
+#theme(legend.key.size = unit(1, 'cm'), #change legend key size
+#        legend.key.height = unit(1, 'cm'), #change legend key height
+#        legend.key.width = unit(1, 'cm'), #change legend key width
+#        legend.title = element_text(size=14), #change legend title font size
+#        legend.text = element_text(size=10)) #change legend text font size
+ggsave("test11.png", pie_chart2, width = 12, height = 9, device = "png", dpi = 300)
+```
+
